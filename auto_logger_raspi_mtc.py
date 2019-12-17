@@ -2,49 +2,40 @@
 """
 Created on Sun Nov 24 19:59:49 2019
 
-@author: spidey, mtc-20, quangnhat185
-
-TODO: [x] add LD_PRELOAD to .bashrc
-TODO: [x] fix lcoation of imshow windows
-TODO: [ ] reduce false positives of hand recognition
-TODO: [x] automate new user creation; need to reload database on successful registration
-TODO: [ ] improve model loading by using encoding only
-@todo check me
-
+@author: spidey, mtc-20
 """
 #LD_PRELOAD='/usr/lib/arm-linux-gnueabihf/libatomic.so.1.2.0 python3'
+import time
+start= time.time()
 import face_recognition
+end = time.time()
 import cv2
 import numpy as np
 import os
 import glob
 from datetime import datetime
 import math
-import time
-from auto_user_reg import *
-from auto_user_reg import users as known_face_names
+#import time
+import pickle
 
-#print("List of existing users: ", users)
+print("Time to load lib: %.2f" %(end - start)) 
+faces=glob.glob("faces/*.jpg")
+#print(faces)
+#print(faces[0].find('.'))
+#print(faces[0][5+1:10])
+# This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
+# other example, but it includes some basic performance tweaks to make things run a lot faster:
+#   1. Process each video frame at 1/4 resolution (though still display it at full resolution)
+#   2. Only detect faces in every other frame of video.
 
-#faces=glob.glob("faces/*.jpg")
-##print(faces)
-##print(faces[0].find('.'))
-##print(faces[0][5+1:10])
-## This is a demo of running face recognition on live video from your webcam. It's a little more complicated than the
-## other example, but it includes some basic performance tweaks to make things run a lot faster:
-##   1. Process each video frame at 1/4 resolution (though still display it at full resolution)
-##   2. Only detect faces in every other frame of video.
-#
-## PLEASE NOTE: This example requires OpenCV (the `cv2` library) to be installed only to read from your webcam.
-## OpenCV is *not* required to use the face_recognition library. It's only required if you want to run this
-## specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
-#
-## Get a reference to webcam #0 (the default one)
-#known_face_encodings=[]
-#known_face_names=[]
+# PLEASE NOTE: This example requires OpenCV (the `cv2` library) to be installed only to read from your webcam.
+# OpenCV is *not* required to use the face_recognition library. It's only required if you want to run this
+# specific demo. If you have trouble installing it, try any of the other demos that don't require it instead.
 
-print("[INFO] Loading user database...")
-print(known_face_names)
+# Get a reference to webcam #0 (the default one)
+known_face_encodings=[]
+known_face_names=[]
+#start = time.time()
 #for face in faces:
 #    image=face_recognition.load_image_file(face)
 #    encoding=face_recognition.face_encodings(image)[0]
@@ -52,21 +43,27 @@ print(known_face_names)
 #    slash_ind=face.find('/')
 #    dot_index=face.find('.')
 #    known_face_names.append(face[slash_ind+1:dot_index])
+#end = time.time()
+#print("Time to load database: %.2f" %(end - start))
 
+start = time.time()
 #with open('users.txt', 'wb') as f:
 #    pickle.dump(known_face_names, f)
-#    
+
+
 #with open('encodings.txt', 'wb') as f:
 #    pickle.dump(known_face_encodings, f)
 
-# Assumes names and encodings have already been written to file    
-#with open('users.txt', 'rb') as f:
-#    known_face_names = pickle.load(f)
-    
+with open('users.txt', 'rb') as f:
+    known_face_names = pickle.load(f)
 
-    
-#print(known_face_names)
-    
+with open('encodings.txt', 'rb') as f:
+    known_face_encodings = pickle.load(f)
+
+end = time.time()
+print("Time to read from file: %.2f" %(end - start)) 
+print(known_face_names)
+#print(len(known_face_encodings),type(known_face_encodings))    
 # Load a sample picture and learn how to recognize it.
 '''
 obama_image = face_recognition.load_image_file("obama.jpg")
@@ -91,19 +88,14 @@ face_locations = []
 face_encodings = []
 face_names = []
 '''
-#cv2.namedWindow('Video', cv2.WINDOW_NORMAL)
-#cv2.moveWindow('Video', 40, 40)
 while True:
     process_this_frame = True
     count=0
-#    workers=['Abir','Quang', 'Thomas', 'Prof Hartanto'] 
+    workers=['Abir','Quang', 'Thomas', 'Prof Hartanto']
     name='dummy'
 
-    user_input=input('\n Press u to create new user or \n Press y then [ENTER] to use me: \n')
-    if user_input.lower() == 'u':
-        add_new_user()
-        
-    elif user_input =='y':
+    user_input=input('Press y and [ENTER] to use me: ')
+    if user_input=='y':
         video_capture = cv2.VideoCapture(0)
         video_capture.set(cv2.cv2.CAP_PROP_FPS, 1)
         while True:
@@ -160,7 +152,7 @@ while True:
                 cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
                 font = cv2.FONT_HERSHEY_DUPLEX
                 cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-            if name in known_face_names:
+            if name in workers:
                 count+=1
                 if count==5:
                     break
@@ -181,10 +173,9 @@ while True:
         cap.set(cv2.cv2.CAP_PROP_FPS, 24)
         entry=''  
         count_in=0
-        count_out=0 
+        count_out=0
         cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
         cv2.moveWindow('frame', 30, 40)
-        
         while(True):
             try:    
                 ret, frame = cap.read()
@@ -218,7 +209,7 @@ while True:
                 
                 
             #find contours
-                contours,hierarchy = cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+                contours,hierarchy= cv2.findContours(mask,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             
                #find contour of max area(hand)
                 cnt = max(contours, key = lambda x: cv2.contourArea(x))
@@ -252,6 +243,7 @@ while True:
                     end = tuple(approx[e][0])
                     far = tuple(approx[f][0])
                     pt= (100,180)
+                    
                     
                     # find length of all sides of triangle
                     a = math.sqrt((end[0] - start[0])**2 + (end[1] - start[1])**2)
@@ -293,7 +285,7 @@ while True:
                             count_in+=1
                            
                         else:
-                            cv2.putText(frame,'Could not recognize, try again',(0,50), font, 2, (0,0,255), 3, cv2.LINE_AA)
+                            cv2.putText(frame,'Could not recognize try again',(0,50), font, 2, (0,0,255), 3, cv2.LINE_AA)
                             
                 elif l==2:
                     cv2.putText(frame,'Could not recognize try again',(0,50), font, 2, (0,0,255), 3, cv2.LINE_AA)
@@ -327,7 +319,6 @@ while True:
                     break
                     
                 #show the windows
-                
                 cv2.imshow('mask',mask)
                 cv2.imshow('frame',frame)
             except:pass
@@ -346,9 +337,7 @@ while True:
 
 
 
-# Data Logger
-        # TODO: should a person be allowed to log-in multiple times???
-        # 
+
 
         now=datetime.now()
         log=os.listdir('logbook/')
@@ -367,13 +356,14 @@ while True:
         file_path="logbook/"+(now.strftime("%B")+' '+year)
         file_name=day+'-'+month+'-'+year+'.txt'
         full_path=os.path.join(file_path, file_name)
-        if day+'-'+month+'-'+year+'.txt' not in day_glob: # create new file? Then check out shouldn't happen
+        if day+'-'+month+'-'+year+'.txt' not in day_glob:
             f=open(full_path,"a+")
             if 'in' in entry:
                 f.write('[Check In++] Username: '+name+' '+day+'-'+ str(now.month) +'-'+year+' '+ str(now.strftime("%H:%M"))+'\n')
-            
+            else:
+                f.write('[--Check Out] Username: '+name+' '+day+'-'+ str(now.month) +'-'+year+' '+str(now.strftime("%H:%M"))+'\n') 
         else:
-            f=open(full_path,"r")                       # 
+            f=open(full_path,"r")
             a=f.read()
             #f=open(full_path,"a+")
             if 'in' in entry:
